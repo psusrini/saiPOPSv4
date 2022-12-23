@@ -101,6 +101,10 @@ public class POPS_Heuristic {
                 suggestions = maxiMin (objectiveGrowth_DOWN, objectiveGrowth_UP );                
             } else {
                 suggestions = findHighestObjective_InHighestFrequency (searchResults) ;
+                if (suggestions.size()==ZERO){
+                    logger.error ("No branching suggestion for nogood size > 2 !") ;
+                    exit(ONE);
+                }
             }
         }  
                         
@@ -111,32 +115,44 @@ public class POPS_Heuristic {
         return  candidateList.get(ZERO);
     }
     
+    //fractional highest objective primary variable
+    //currently we assume at least 1 such exists
     private Set<String> findHighestObjective_InHighestFrequency (List<NogoodSearchResult> searchResults) {
         Set<String> winners = new HashSet<String> ();
         
         double largestKnownNumber_ofVariblesExamined = -ONE;
         double largestKnownObjectiveMagnitude  = -ONE;
         
-        for (NogoodSearchResult nsr: searchResults){
-            
-            double thisNumVariablesExamined = nsr.getNumVarsExamined();
-            double thisHighestObjectiveMagnitude = nsr.highestObjectiveMagnitude_amongFractionalVars;
-            
-            boolean cond1 = thisHighestObjectiveMagnitude> largestKnownObjectiveMagnitude;
-            boolean cond2 = thisNumVariablesExamined > largestKnownNumber_ofVariblesExamined &&
-                    thisHighestObjectiveMagnitude == largestKnownObjectiveMagnitude;
-            boolean cond3 = thisNumVariablesExamined == largestKnownNumber_ofVariblesExamined &&
-                    thisHighestObjectiveMagnitude == largestKnownObjectiveMagnitude;
-            
-            if (cond1|| cond2){
-                largestKnownNumber_ofVariblesExamined=thisNumVariablesExamined;
-                largestKnownObjectiveMagnitude=thisHighestObjectiveMagnitude;
-                winners.clear();
-                winners.addAll (nsr.highest_objectiveMagnitude_fractionalVars);
-            }else if (cond3){
-                winners.addAll (nsr.highest_objectiveMagnitude_fractionalVars);
-            }  
-            
+        for (NogoodSearchResult nsr: searchResults){            
+            for (Triplet triplet : nsr.allFractionalVarsExamined){
+                
+                String thisVar = triplet.varName;
+                Double coeff = triplet.constraintCoefficient;
+                double objCoeff = triplet.objectiveCoeffcient;
+                double thisObjectiveMagnitude = Math.abs (objCoeff );
+                boolean isPrimary =  objCoeff*    coeff> ZERO    ;
+                
+                if (!isPrimary) continue;
+                
+                //we assume that all the other variables are primary, should check
+                double thisNumVariablesExamined = nsr.getNumVarsExamined();
+                
+                boolean cond1 = thisObjectiveMagnitude> largestKnownObjectiveMagnitude;
+                boolean cond2 = thisNumVariablesExamined > largestKnownNumber_ofVariblesExamined &&
+                        thisObjectiveMagnitude == largestKnownObjectiveMagnitude;
+                boolean cond3 = thisNumVariablesExamined == largestKnownNumber_ofVariblesExamined &&
+                        thisObjectiveMagnitude == largestKnownObjectiveMagnitude;
+
+                if (cond1|| cond2){
+                    largestKnownNumber_ofVariblesExamined=thisNumVariablesExamined;
+                    largestKnownObjectiveMagnitude=thisObjectiveMagnitude;
+                    winners.clear();
+                    winners.add ( thisVar);
+                }else if (cond3){
+                    winners.add  (thisVar );
+                }
+                
+            }                        
         }
         
         return winners;
