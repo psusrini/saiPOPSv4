@@ -167,6 +167,9 @@ public class POPS_Heuristic {
         //all vars encountered and their objectives
         Map<String, Double > allVariablesEncountered = new TreeMap<String, Double > ();
         
+        Map<String, Set<String>> objectiveFixes_DOWN=  new HashMap<String, Set<String>> ( );
+        Map<String, Set<String>> objectiveFixes_UP=  new HashMap<String, Set<String>> ( );
+        
         for (NogoodSearchResult nsr: searchResults){
             for (Triplet triplet : nsr.allFractionalVarsExamined){
                 String thisVar = triplet.varName;
@@ -174,6 +177,36 @@ public class POPS_Heuristic {
                 allVariablesEncountered.put (thisVar,thisObjective );
                 
                 boolean isZeroFixInNogood = triplet.constraintCoefficient > ZERO;
+                
+                 
+                
+                
+                
+                /*
+                if use TED then
+                Set<String> implicationsCaused = new HashSet<String>();
+                for (Triplet ve :nsr.allVarsExamined){
+                    implicationsCaused.add ( ve.varName);
+                }
+                implicationsCaused.remove(thisVar);
+                if (isZeroFixInNogood){
+                    Set<String> list = objectiveFixes_DOWN.get ( thisVar);
+                    if (null==list) list = new HashSet<String> ();
+                    list.addAll(implicationsCaused );
+                    objectiveFixes_DOWN.put ( thisVar, list);
+                }else {
+                    Set<String> list = objectiveFixes_UP.get ( thisVar);
+                    if (null==list) list = new HashSet<String> ();
+                    list.addAll(implicationsCaused );
+                    objectiveFixes_UP.put ( thisVar, list);
+                }*/
+                
+                
+                
+                
+                
+                
+                
                 if (thisObjective > ZERO){
                     if (isZeroFixInNogood){
                         //implications will happen when this var branches down
@@ -200,6 +233,18 @@ public class POPS_Heuristic {
             }
         }
         
+        
+        /* we can do another round of accumulating  sums  
+        Map<String, Double> objectiveGrowth_DOWN_CUMULATIVE =new  HashMap<String, Double> ();
+        Map<String, Double> objectiveGrowth_UP_CUMULATIVE= new HashMap<String, Double> ();
+        TED.accumulate (objectiveGrowth_DOWN_CUMULATIVE, objectiveGrowth_DOWN) ;
+        TED.accumulate (objectiveGrowth_UP_CUMULATIVE, objectiveGrowth_UP);
+        objectiveGrowth_UP .clear();
+        objectiveGrowth_UP.putAll( objectiveGrowth_UP_CUMULATIVE);
+        objectiveGrowth_DOWN.clear();
+        objectiveGrowth_DOWN.putAll( objectiveGrowth_DOWN_CUMULATIVE);*/
+        
+        
         //in addition to accumulations, there will be objective growth due to 
         //the branching variable itself
         for (Map.Entry<String, Double > entry : allVariablesEncountered.entrySet()){
@@ -217,6 +262,8 @@ public class POPS_Heuristic {
         
         
     }
+    
+  
     
     private void appendScore (String var , Map<String, Double> objectiveGrowthMap, double sum ) {
         Double current = objectiveGrowthMap.get (var) ;
